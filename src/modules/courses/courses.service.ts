@@ -13,6 +13,12 @@ export class CoursesService {
       data: {
         name: createCourseDto.name,
         description: createCourseDto.description,
+        color: createCourseDto.color,
+        user: {
+          connect: {
+            id: createCourseDto.userId,
+          },
+        },
       },
     });
   }
@@ -23,7 +29,8 @@ export class CoursesService {
     const search = query.search?.trim();
 
     const where = {
-      archivedAt: null as Date | null,
+      archivedAt: null,
+      ...(query.userId ? { userId: query.userId } : {}),
       ...(search
         ? {
             name: {
@@ -80,7 +87,7 @@ export class CoursesService {
         ...(updateCourseDto.description !== undefined
           ? { description: updateCourseDto.description }
           : {}),
-        ...(updateCourseDto.isActive !== undefined ? { isActive: updateCourseDto.isActive } : {}),
+        ...(updateCourseDto.color !== undefined ? { color: updateCourseDto.color } : {}),
       },
     });
   }
@@ -92,7 +99,6 @@ export class CoursesService {
       where: { id },
       data: {
         archivedAt: new Date(),
-        isActive: false,
       },
     });
   }

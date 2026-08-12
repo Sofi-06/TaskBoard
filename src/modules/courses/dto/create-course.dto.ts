@@ -10,4 +10,12 @@ export class CreateCourseDto {
   @IsString()
   @MaxLength(1000)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  color?: string;
+
+  @IsString()
+  userId: string;
 }

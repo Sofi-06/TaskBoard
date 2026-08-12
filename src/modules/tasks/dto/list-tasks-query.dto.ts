@@ -1,7 +1,8 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { TaskPriority, TaskStatus } from './create-task.dto';
 
-export class ListCoursesQueryDto {
+export class ListTasksQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -20,6 +21,10 @@ export class ListCoursesQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString()
-  userId?: string;
+  @IsEnum(TaskStatus)
+  status?: TaskStatus;
+
+  @IsOptional()
+  @IsEnum(TaskPriority)
+  priority?: TaskPriority;
 }
