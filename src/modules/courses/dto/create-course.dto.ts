@@ -6,6 +6,7 @@ export class CreateCourseDto {
   @MaxLength(120)
   name: string;
 
+
   @IsOptional()
   @IsString()
   @MaxLength(1000)

@@ -44,6 +44,11 @@ export class CoursesService {
     const [items, total] = await this.prismaService.$transaction([
       this.prismaService.course.findMany({
         where,
+        include: {
+          tasks: {
+            orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+          },
+        },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' },
