@@ -7,12 +7,15 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { MailService, brandedEmail } from '../../common/mail/mail.service';
+import { createHash, randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   private signToken(userId: string, email: string) {
@@ -87,5 +90,25 @@ export class AuthService {
         updatedAt: true,
       },
     });
+  }
+
+  async forgotPassword(rawEmail: string) {
+    const email = rawEmail.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (user) {
+      const token = randomBytes(32).toString('hex');
+      await this.prisma.user.update({ where: { id: user.id }, data: { resetTokenHash: createHash('sha256').update(token).digest('hex'), resetTokenExpiresAt: new Date(Date.now() + 30 * 60 * 1000) } });
+      const url = `${process.env.APP_URL || 'http://localhost:5173'}#reset-password/${token}`;
+      await this.mailService.send(user.email, 'Recupera tu contraseña de TaskBoard', brandedEmail(`Hola ${user.name}`, '<p>Recibimos una solicitud para cambiar tu contraseña.</p><p>El enlace es válido durante 30 minutos.</p>', { label: 'Restablecer contraseña', url }));
+    }
+    return { message: 'Si el correo existe, recibirás un enlace para recuperar tu contraseña.' };
+  }
+
+  async resetPassword(token: string, password: string) {
+    const hash = createHash('sha256').update(token).digest('hex');
+    const user = await this.prisma.user.findFirst({ where: { resetTokenHash: hash, resetTokenExpiresAt: { gt: new Date() } } });
+    if (!user) throw new UnauthorizedException('El enlace no es válido o ya venció');
+    await this.prisma.user.update({ where: { id: user.id }, data: { password: await bcrypt.hash(password, 10), resetTokenHash: null, resetTokenExpiresAt: null } });
+    return { message: 'Contraseña actualizada correctamente' };
   }
 }

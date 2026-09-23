@@ -6,6 +6,12 @@ import { LoginDto, RegisterDto } from './dto/auth.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Post('forgot-password')
+  forgotPassword(@Body('email') email: string) { return this.authService.forgotPassword(email); }
+
+  @Post('reset-password')
+  resetPassword(@Body() body: { token: string; password: string }) { return this.authService.resetPassword(body.token, body.password); }
+
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);

@@ -24,6 +24,8 @@ model User {
   name      String
   email     String   @unique
   password  String
+  resetTokenHash   String?   @unique
+  resetTokenExpiresAt DateTime?
 
   courses  Course[]
 
@@ -61,4 +63,6 @@ model Task {
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  reminder24SentAt DateTime?
+  reminder1SentAt  DateTime?
 }
