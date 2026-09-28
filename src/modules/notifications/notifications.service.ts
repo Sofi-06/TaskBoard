@@ -1,11 +1,16 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MailService, brandedEmail } from '../../common/mail/mail.service';
+import { TasksService } from '../tasks/tasks.service';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService, private readonly mail: MailService) {}
-  onModuleInit() { void this.checkDueTasks(); setInterval(() => void this.checkDueTasks(), 10 * 60 * 1000); }
+  constructor(private readonly prisma: PrismaService, private readonly mail: MailService, private readonly tasks: TasksService) {}
+  onModuleInit() { void this.archiveExpiredTasks(); void this.checkDueTasks(); setInterval(() => void this.archiveExpiredTasks(), 10 * 60 * 1000); setInterval(() => void this.checkDueTasks(), 10 * 60 * 1000); }
+
+  private async archiveExpiredTasks() {
+    await this.tasks.archiveExpiredTasks();
+  }
 
   private async checkDueTasks() {
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) return;

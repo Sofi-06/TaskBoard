@@ -61,6 +61,7 @@ model Task {
   courseId    String
   course      Course       @relation(fields: [courseId], references: [id])
 
+  archivedAt  DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   reminder24SentAt DateTime?

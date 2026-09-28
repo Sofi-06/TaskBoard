@@ -14,7 +14,7 @@ export class DashboardController {
   async getSummary(@Req() request: AuthenticatedRequest) {
     const courses = await this.prisma.course.findMany({
       where: { userId: request.user.id, archivedAt: null },
-      include: { tasks: { orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }] } },
+      include: { tasks: { where: { archivedAt: null }, orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }] } },
       orderBy: { createdAt: 'asc' },
     });
     const tasks = courses.flatMap((course) => course.tasks.map((task) => ({ ...task, course: { id: course.id, name: course.name, color: course.color } })));
@@ -30,7 +30,7 @@ export class DashboardController {
         upcoming: upcomingTasks.length,
         active: tasks.filter((task) => task.status !== 'COMPLETED').length,
       },
-      courses: courses.map((course) => ({ id: course.id, name: course.name, description: course.description, color: course.color, taskCount: course.tasks.length, nextTask: course.tasks.find((task) => task.dueDate && task.dueDate >= now && task.status !== 'COMPLETED') ?? null })),
+      courses: courses.map((course) => ({ id: course.id, name: course.name, description: course.description, color: course.color, taskCount: course.tasks.length, tasks: course.tasks, nextTask: course.tasks.find((task) => task.dueDate && task.dueDate >= now && task.status !== 'COMPLETED') ?? null })),
       upcomingTasks: upcomingTasks.slice(0, 6),
     };
   }

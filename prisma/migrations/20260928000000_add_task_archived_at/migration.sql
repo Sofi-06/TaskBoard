@@ -1,0 +1,1 @@
+ALTER TABLE `Task` ADD COLUMN `archivedAt` DATETIME(3) NULL;

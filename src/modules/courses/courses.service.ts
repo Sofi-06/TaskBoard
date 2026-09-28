@@ -46,6 +46,7 @@ export class CoursesService {
         where,
         include: {
           tasks: {
+            where: { archivedAt: null },
             orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
           },
         },
@@ -65,6 +66,14 @@ export class CoursesService {
         totalPages: Math.ceil(total / limit) || 1,
       },
     };
+  }
+
+  async findArchived(userId: string) {
+    return this.prismaService.course.findMany({
+      where: { userId, archivedAt: { not: null } },
+      include: { tasks: { orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }] } },
+      orderBy: { archivedAt: 'desc' },
+    });
   }
 
   async findOne(id: string) {
@@ -98,13 +107,22 @@ export class CoursesService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-
-    return this.prismaService.course.update({
-      where: { id },
-      data: {
-        archivedAt: new Date(),
-      },
+    const course = await this.prismaService.course.findUnique({ where: { id } });
+    if (!course) throw new NotFoundException(`Course with id ${id} was not found`);
+    return this.prismaService.$transaction(async (transaction) => {
+      await transaction.task.deleteMany({ where: { courseId: id } });
+      return transaction.course.delete({ where: { id } });
     });
+  }
+
+  async archive(id: string) {
+    await this.findOne(id);
+    return this.prismaService.course.update({ where: { id }, data: { archivedAt: new Date() } });
+  }
+
+  async restore(id: string) {
+    const course = await this.prismaService.course.findUnique({ where: { id } });
+    if (!course) throw new NotFoundException(`Course with id ${id} was not found`);
+    return this.prismaService.course.update({ where: { id }, data: { archivedAt: null } });
   }
 }

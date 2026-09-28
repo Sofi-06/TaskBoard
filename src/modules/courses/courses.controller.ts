@@ -7,8 +7,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -30,6 +32,11 @@ export class CoursesController {
     return this.coursesService.findAll(query);
   }
 
+  @Get('archived')
+  findArchived(@Req() request: Request & { user: { id: string } }) {
+    return this.coursesService.findArchived(request.user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.coursesService.findOne(id);
@@ -43,5 +50,15 @@ export class CoursesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.coursesService.remove(id);
+  }
+
+  @Patch(':id/archive')
+  archive(@Param('id') id: string) {
+    return this.coursesService.archive(id);
+  }
+
+  @Patch(':id/restore')
+  restore(@Param('id') id: string) {
+    return this.coursesService.restore(id);
   }
 }

@@ -7,8 +7,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -19,6 +21,11 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
+
+  @Get('archived')
+  findArchived(@Req() request: Request & { user: { id: string } }) {
+    return this.tasksService.findArchivedByUser(request.user.id);
+  }
 
   @Get('course/:courseId')
   findAllByCourse(
@@ -49,5 +56,15 @@ export class TasksController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.tasksService.remove(id);
+  }
+
+  @Patch(':id/archive')
+  archive(@Param('id') id: string) {
+    return this.tasksService.archive(id);
+  }
+
+  @Patch(':id/restore')
+  restore(@Param('id') id: string) {
+    return this.tasksService.restore(id);
   }
 }

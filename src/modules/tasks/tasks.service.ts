@@ -8,6 +8,21 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 export class TasksService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  /** Archives tasks seven calendar days after their due date. Dates from the date input are stored at UTC midnight. */
+  async archiveExpiredTasks() {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const archiveBefore = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    return this.prismaService.task.updateMany({
+      where: {
+        archivedAt: null,
+        dueDate: { lt: archiveBefore },
+      },
+      data: { archivedAt: new Date() },
+    });
+  }
+
   async ensureCourseExists(courseId: string) {
     const course = await this.prismaService.course.findFirst({
       where: {
@@ -51,6 +66,7 @@ export class TasksService {
       courseId,
       ...(query.status ? { status: query.status } : {}),
       ...(query.priority ? { priority: query.priority } : {}),
+      archivedAt: null,
       ...(search
         ? {
             OR: [
@@ -80,6 +96,14 @@ export class TasksService {
         totalPages: Math.ceil(total / limit) || 1,
       },
     };
+  }
+
+  async findArchivedByUser(userId: string) {
+    return this.prismaService.task.findMany({
+      where: { archivedAt: { not: null }, course: { userId } },
+      include: { course: true },
+      orderBy: { archivedAt: 'desc' },
+    });
   }
 
   async findOne(id: string) {
@@ -122,5 +146,15 @@ export class TasksService {
     return this.prismaService.task.delete({
       where: { id },
     });
+  }
+
+  async archive(id: string) {
+    await this.findOne(id);
+    return this.prismaService.task.update({ where: { id }, data: { archivedAt: new Date() } });
+  }
+
+  async restore(id: string) {
+    await this.findOne(id);
+    return this.prismaService.task.update({ where: { id }, data: { archivedAt: null } });
   }
 }
